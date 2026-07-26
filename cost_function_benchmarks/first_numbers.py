@@ -17,6 +17,7 @@ Out:  first_numbers.csv + a console summary + first_numbers.png (needs matplotli
 """
 
 import csv
+import math
 import random
 import statistics
 
@@ -100,8 +101,6 @@ def main():
         w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
         w.writeheader()
         w.writerows(rows)
-
-    import math
 
     n_stale = len({r["placement"] for r in rows if math.isinf(r["C1"])})
     if n_stale:
