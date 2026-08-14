@@ -573,51 +573,188 @@ def main():
     plot(rows)
 
 
+def _decade_ticks(lo: float, hi: float) -> list[float]:
+    """1-2-5 ticks spanning [lo, hi].
+
+    Matplotlib's default log minor labels ("2 x 10^-2", "3 x 10^-2", ...) collide
+    into an unreadable smear over the ~1.5 decades this data spans. A sparse
+    1-2-5 ladder with plain decimal labels says the same thing and can be read.
+    """
+    ticks = []
+    k = math.floor(math.log10(lo))
+    while 10**k <= hi * 10:
+        for m in (1, 2, 5):
+            t = m * 10.0**k
+            if lo / 1.5 <= t <= hi * 1.5:
+                ticks.append(t)
+        k += 1
+    return ticks
+
+
+def _fmt_tick(t: float) -> str:
+    return f"{t:g}" if t >= 0.01 else f"{t:.0e}".replace("e-0", "e-")
+
+
+def calibration_ratio(row, key: str) -> float:
+    """Predicted average-gate infidelity / observed, for one row.
+
+    Same quantity the ABSOLUTE CALIBRATION block reports: the cost is a
+    log-fidelity sum, so 1 - exp(-C) is the fidelity it predicts. A value below 1
+    means the surrogate is optimistic. This is what the residual panel plots.
+    """
+    return (1 - math.exp(-row[key])) / row["observed_avg_infidelity"]
+
+
 def plot(rows, out_png="aer_validation.png"):
-    """Predicted cost vs simulated infidelity, one panel per cost function."""
+    """Two views per cost function, in a column each.
+
+    TOP: predicted vs simulated, log-log. Tests RANKING -- the thing the
+    transpiler pass needs. Both costs sit almost on the diagonal here, which is
+    the honest headline but hides everything about the idle term.
+
+    BOTTOM: the residual. Ranking is scale-free, so a surrogate can rank
+    perfectly while mis-predicting the magnitude by a systematic factor. Dividing
+    out the diagonal turns that factor into the y-axis and makes visible what the
+    scatter cannot: the size of the offset from 1, whether it is a constant
+    (correctable by one scalar) or drifts with circuit size (not correctable),
+    and whether the three decompositions share it.
+    """
     try:
         import matplotlib.pyplot as plt
+        from matplotlib.lines import Line2D
+        from matplotlib.ticker import FixedLocator, NullLocator
     except ImportError:
         print("[plot skipped] matplotlib not installed")
         return
     finite = [r for r in rows if math.isfinite(r["C1"]) and r["ok"]]
     labels = list(dict.fromkeys(r["decomposition"] for r in finite))
     colors = {l: c for l, c in zip(labels, ["#0173B2", "#DE8F05", "#029E73", "#CC78BC"])}
+    markers = {l: m for l, m in zip(labels, ("o", "s", "^", "D"))}
 
-    fig, axes = plt.subplots(1, 2, figsize=(11, 5), sharey=True)
-    for ax, key in zip(axes, ("C0", "C1")):
+    obs = [r["observed_avg_infidelity"] for r in finite]
+    # One shared square frame across both scatter panels: the y = x line then sits
+    # at 45 degrees in both, so the vertical offset from it is directly
+    # comparable panel to panel.
+    lo = min(obs + [r[k] for r in finite for k in ("C0", "C1")])
+    hi = max(obs + [r[k] for r in finite for k in ("C0", "C1")])
+    lim = (lo / 1.35, hi * 1.35)
+    ticks = _decade_ticks(lo, hi)
+
+    ratios = {k: [calibration_ratio(r, k) for r in finite] for k in ("C0", "C1")}
+    r_lo = min(min(v) for v in ratios.values())
+    r_hi = max(max(v) for v in ratios.values())
+    pad = 0.08 * (r_hi - r_lo)
+
+    fig, axes = plt.subplots(
+        2,
+        2,
+        figsize=(11.0, 7.4),
+        sharex="col",
+        sharey="row",
+        # The top panels are forced square (set_box_aspect), so their allotted
+        # row must be roughly as tall as a panel is wide or the extra height
+        # opens as dead space between the rows.
+        gridspec_kw={"height_ratios": [1.0, 0.42], "hspace": 0.1, "wspace": 0.13},
+    )
+
+    def style(ax):
+        ax.grid(alpha=0.25, which="major", lw=0.6)
+        ax.set_axisbelow(True)
+        for s in ("top", "right"):
+            ax.spines[s].set_visible(False)
+        for s in ("left", "bottom"):
+            ax.spines[s].set_color("0.6")
+        ax.tick_params(labelsize=9, color="0.6")
+        ax.set_xscale("log")
+        ax.set_xlim(*lim)
+        ax.xaxis.set_major_locator(FixedLocator(ticks))
+        ax.xaxis.set_minor_locator(NullLocator())
+        ax.set_xticklabels([_fmt_tick(t) for t in ticks])
+
+    def draw(ax, key, ykey):
         for l in labels:
             sub = [r for r in finite if r["decomposition"] == l]
             ax.scatter(
                 [r[key] for r in sub],
-                [r["observed_avg_infidelity"] for r in sub],
-                s=34,
-                color=colors[l],
-                label=l,
-                alpha=0.85,
+                [ykey(r) for r in sub],
+                s=46,
+                marker=markers[l],
+                facecolor=colors[l],
+                alpha=0.8,
                 edgecolor="white",
-                linewidth=0.5,
+                linewidth=0.8,
+                zorder=3,
             )
-        lim = [
-            min(min(r[key] for r in finite), min(r["observed_avg_infidelity"] for r in finite)),
-            max(max(r[key] for r in finite), max(r["observed_avg_infidelity"] for r in finite)),
-        ]
-        ax.plot(lim, lim, ls="--", lw=1, color="0.5", label="y = x" if key == "C0" else None)
-        rho = spearman([r[key] for r in finite], [r["observed_avg_infidelity"] for r in finite])[0]
-        ax.set_xscale("log"); ax.set_yscale("log")
-        ax.set_xlabel(f"predicted {key}")
-        ax.set_title(f"{key}:  Spearman rho = {rho:.4f}", fontweight="bold")
-        ax.grid(alpha=0.3, which="both")
-        for s in ("top", "right"):
-            ax.spines[s].set_visible(False)
-    axes[0].set_ylabel("simulated average-gate infidelity (Aer, exact superoperator)")
-    axes[0].legend(fontsize=8)
-    fig.suptitle(
-        f"Cost-function validation on FakeTorino  "
-        f"(n = {len(finite)} finite (decomposition, placement) pairs)",
-        fontweight="bold",
+
+    for col, key in enumerate(("C0", "C1")):
+        top, bot = axes[0][col], axes[1][col]
+
+        # --- ranking view
+        top.plot(lim, lim, ls="--", lw=1.2, color="0.55", zorder=1)
+        draw(top, key, lambda r: r["observed_avg_infidelity"])
+        style(top)
+        top.set_yscale("log")
+        top.set_ylim(*lim)
+        top.set_box_aspect(1)
+        top.yaxis.set_major_locator(FixedLocator(ticks))
+        top.yaxis.set_minor_locator(NullLocator())
+        top.set_yticklabels([_fmt_tick(t) for t in ticks])
+        rho = spearman([r[key] for r in finite], obs)[0]
+        top.set_title(
+            f"{key}     Spearman $\\rho$ = {rho:.4f}", fontweight="bold", pad=10
+        )
+
+        # --- calibration residual
+        med = statistics.median(ratios[key])
+        spread = max(ratios[key]) - min(ratios[key])
+        bot.axhline(1.0, ls="--", lw=1.2, color="0.55", zorder=1)
+        bot.axhline(med, lw=1.0, color="0.25", zorder=2)
+        draw(bot, key, lambda r, k=key: calibration_ratio(r, k))
+        style(bot)
+        bot.set_ylim(r_lo - pad, max(r_hi + pad, 1.03))
+        bot.set_xlabel(f"predicted {key}")
+        bot.annotate(
+            f"median {med:.3f}   spread {spread:.3f}",
+            xy=(0.985, 0.06),
+            xycoords="axes fraction",
+            ha="right",
+            va="bottom",
+            fontsize=9,
+            color="0.35",
+        )
+
+    axes[0][0].set_ylabel("simulated average-gate infidelity\n(Aer, exact superoperator)")
+    axes[1][0].set_ylabel("predicted / observed\n$(1-e^{-C})\\;/\\;$ observed")
+
+    handles = [
+        Line2D(
+            [], [], ls="", marker=markers[l], color=colors[l],
+            markeredgecolor="white", markersize=8, label=l,
+        )
+        for l in labels
+    ]
+    # The data hugs the diagonal, so an in-plot "y = x" label would sit on top of
+    # points in both panels. It goes in the legend instead.
+    handles.append(Line2D([], [], ls="--", lw=1.2, color="0.55", label="y = x  /  ratio = 1"))
+    handles.append(Line2D([], [], lw=1.0, color="0.25", label="median ratio"))
+    axes[0][0].legend(
+        handles=handles,
+        fontsize=9,
+        loc="upper left",
+        frameon=False,
+        handletextpad=0.4,
+        borderpad=0.2,
     )
-    fig.tight_layout()
+    fig.suptitle("Cost-function validation on FakeTorino", fontweight="bold", y=0.98)
+    fig.text(
+        0.5,
+        0.945,
+        f"n = {len(finite)} finite (decomposition, placement) pairs   ·   "
+        f"ratio below 1 means the surrogate under-predicts error",
+        ha="center",
+        fontsize=9.5,
+        color="0.35",
+    )
     fig.savefig(out_png, dpi=150, bbox_inches="tight")
     print(f"wrote {out_png}")
 
