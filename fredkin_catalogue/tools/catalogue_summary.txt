@@ -1,0 +1,76 @@
+=============================================================================
+ID   Qubits  Anc  Depth   CX   CZ   CCX   T    Tdg   H    S    Sdg   2Q   LNN
+=============================================================================
+
+Gate histogram for c1:
+  ccx     : 1
+  cx      : 2
+
+c1   3       0    3       2    0    1     0    0     0    0    0     2    Yes
+
+Gate histogram for c2:
+  ccx     : 2
+  cx      : 6
+  h       : 2
+  s       : 1
+  t       : 3
+  tdg     : 4
+
+c2   3       0    14      6    0    2     3    4     2    1    0     6    Yes
+
+Gate histogram for c3:
+  ccx     : 2
+  cx      : 5
+  h       : 1
+  s       : 1
+  sdg     : 1
+  sx      : 1
+  t       : 5
+  tdg     : 2
+
+c3   3       0    13      5    0    2     5    2     1    1    1     5    Yes
+
+Gate histogram for c4:
+  cx      : 8
+  h       : 3
+  s       : 4
+  sdg     : 2
+  sx      : 3
+  t       : 4
+  tdg     : 3
+  x       : 1
+  z       : 1
+
+c4   3       0    20      8    0    0     4    3     3    4    2     8    Yes
+
+Gate histogram for c5:
+  cx      : 10
+  h       : 10
+  s       : 9
+  sdg     : 5
+  sx      : 6
+  sxdg    : 2
+  t       : 4
+  tdg     : 3
+  x       : 1
+  z       : 2
+
+c5   3       0    29      10   0    0     4    3     10   9    5     10   Yes
+
+Gate histogram for c6:
+  ccx     : 2
+  cx      : 5
+  h       : 2
+  s       : 2
+  sdg     : 1
+  t       : 4
+  tdg     : 3
+
+c6   3       0    15      5    0    2     4    3     2    2    1     5    Yes
+
+Gate histogram for c7:
+  csx     : 2
+  csxdg   : 1
+  cx      : 4
+
+c7   3       0    7       4    0    0     0    0     0    0    0     7    No

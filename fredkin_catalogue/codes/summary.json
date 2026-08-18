@@ -1,0 +1,92 @@
+{
+  "D1_Textbook": {
+    "layouts": 25,
+    "min_cz": 11,
+    "avg_cz": 11.72,
+    "min_sx": 17,
+    "avg_sx": 21.56,
+    "min_depth": 38,
+    "avg_depth": 41.04
+  },
+  "D2_Cruz_FigE": {
+    "layouts": 25,
+    "min_cz": 19,
+    "avg_cz": 20.44,
+    "min_sx": 36,
+    "avg_sx": 39.72,
+    "min_depth": 70,
+    "avg_depth": 75.52
+  },
+  "D3_Cruz_FigF": {
+    "layouts": 25,
+    "min_cz": 19,
+    "avg_cz": 20.44,
+    "min_sx": 36,
+    "avg_sx": 39.72,
+    "min_depth": 70,
+    "avg_depth": 75.84
+  },
+  "D4_Cruz_FigB": {
+    "layouts": 25,
+    "min_cz": 8,
+    "avg_cz": 9.08,
+    "min_sx": 17,
+    "avg_sx": 20.64,
+    "min_depth": 26,
+    "avg_depth": 31.4
+  },
+  "D5_Cruz_FigC": {
+    "layouts": 25,
+    "min_cz": 10,
+    "avg_cz": 11.08,
+    "min_sx": 25,
+    "avg_sx": 26.56,
+    "min_depth": 36,
+    "avg_depth": 39.84
+  },
+  "D6_Saha": {
+    "layouts": 25,
+    "min_cz": 19,
+    "avg_cz": 20.44,
+    "min_sx": 36,
+    "avg_sx": 39.72,
+    "min_depth": 70,
+    "avg_depth": 75.76
+  },
+  "D7_Yu_Vgate": {
+    "layouts": 25,
+    "min_cz": 12,
+    "avg_cz": 12.72,
+    "min_sx": 26,
+    "avg_sx": 28.44,
+    "min_depth": 40,
+    "avg_depth": 42.64
+  },
+  "D8_BQiskit_Free": {
+    "layouts": 25,
+    "min_cz": 8,
+    "avg_cz": 9.92,
+    "min_sx": 27,
+    "avg_sx": 32.92,
+    "min_depth": 40,
+    "avg_depth": 47.12
+  },
+  "D9_BQiskit_Native": {
+    "layouts": 25,
+    "min_cz": 8,
+    "avg_cz": 9.92,
+    "min_sx": 27,
+    "avg_sx": 31.64,
+    "min_depth": 41,
+    "avg_depth": 47.68
+  },
+  "D10_BQiskit_NonLNN": {
+    "layouts": 25,
+    "min_cz": 12,
+    "avg_cz": 14.24,
+    "min_sx": 31,
+    "avg_sx": 35.56,
+    "min_depth": 50,
+    "avg_depth": 55.52
+  }
+}
